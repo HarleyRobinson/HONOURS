@@ -1,0 +1,55 @@
+library(DESeq2)
+
+d = read.table('All.count', header=T, row.names=1)
+
+exp_design = data.frame(row.names = colnames(d),
+condition =c("AN", "AN", "AN", "AN", "AN", "WT", "WT", "WT", "WT"),
+libType = c("paired-end", "paired-end", "paired-end", "paired-end", "paired-end", "paired-end", "paired-end", "paired-end", "paired-end"))
+
+condition = relevel(exp_design$condition, "WT")
+
+dds = DESeqDataSetFromMatrix(countData=d, colData=exp_design, design=~condition)
+
+dds = DESeq(dds)
+
+svg('plotMA.svg')
+plotMA(dds, ylim = c(-3,3))
+dev.off()
+
+png('plotMA.png')
+plotMA(dds, ylim = c(-3,3))
+dev.off()
+
+svg('plotPCA_dds.svg')
+plotPCA(dds)
+dev.off()
+
+png('plotPCA_dds.png')
+plotPCA(dds)
+dev.off()
+
+
+res = results(dds)
+
+res_ordered = res[order(res$padj),]
+
+write.csv(as.data.frame(res_ordered), file="DEG_AN_WT_all_results.csv")
+
+res_sig = subset(res_ordered, padj < 0.1)
+
+write.csv(as.data.frame(res_sig), file="DEG_AN_WT_results_padj01.csv")
+
+ressig = subset(res_ordered, pvalue < 0.05)
+
+write.csv(as.data.frame(res_sig), file="DEG_AN_WT_results_pvalue005.csv")
+
+#rld = rlog(dds)
+rld = rlogTransformation(dds)
+
+svg('plotPCA_rld.svg')
+plotPCA(rld)
+dev.off()
+
+png('plotPCA_rld.png')
+plotPCA(rld)
+dev.off()
